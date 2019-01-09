@@ -2,11 +2,18 @@ const express = require('express');
 const router = express.Router();
 
 const User = require('../models/User.model');
+const passport = require('passport');
 
 // Ingresar a la app
 router.get('/users/signin', (req, res) => {
     res.render('users/signin')
 })
+
+router.post('/users/signin', passport.authenticate('local', {
+    successRedirect: '/notes',
+    failureRedirect: '/users/signin',
+    failureFlash: true
+}))
 
 // Reguistrar en la app
 router.get('/users/signup', (req, res) => {
@@ -46,6 +53,12 @@ router.post('/users/signup', async (req, res) => {
         }
     }
 
+})
+
+// Cerrar sesión
+router.get('/users/logout', (req, res) => {
+    req.logout();
+    res.redirect('/');
 })
 
 

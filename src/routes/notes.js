@@ -2,20 +2,21 @@ const express = require('express');
 const router = express.Router();
 
 const Note = require('../models/Note.model');
+const { isAuthenticated } = require('../helpers/auth');
 
 // Listar todas las notas
-router.get('/notes', async (req, res) => {
-    const notes = await Note.find().sort({date: 'desc'});
+router.get('/notes',isAuthenticated, async (req, res) => {
+    const notes = await Note.find({user: req.user.id}).sort({date: 'desc'});
     res.render('notes/all-notes', { notes })
 })
 
 // Formulario para crear nota
-router.get('/notes/add', (req, res) => {
+router.get('/notes/add', isAuthenticated, (req, res) => {
     res.render('notes/new-note')
 })
 
 // Guardar nota en BD
-router.post('/notes/new-note', async (req, res) => {
+router.post('/notes/new-note', isAuthenticated, async (req, res) => {
     const { title, description } = req.body;
     const errors = [];
 
@@ -35,6 +36,7 @@ router.post('/notes/new-note', async (req, res) => {
         });
     }else{
         const newNote = new Note({title, description});
+        newNote.user = req.user.id;  //Relacionar una nota con el id de un usuario.
         await newNote.save();
         req.flash('success_msg', 'Nota agregada satisfactoriamente')
         res.redirect('/notes')
@@ -43,13 +45,13 @@ router.post('/notes/new-note', async (req, res) => {
 });
 
 // Editar notas
-router.get('/notes/edit/:id', async (req, res) => {
+router.get('/notes/edit/:id',isAuthenticated, async (req, res) => {
     const note = await Note.findById(req.params.id);
     res.render('notes/edit-note', {note})
 })
 
 // Guardar notas editadas en la BD
-router.put('/notes/edit-note/:id', async (req, res) => {
+router.put('/notes/edit-note/:id',isAuthenticated, async (req, res) => {
     const {title, description} = req.body;
     const note = await Note.findByIdAndUpdate(req.params.id, { title, description });
     req.flash('success_msg', 'Nota actualizada satisfactoriamente')
@@ -57,7 +59,7 @@ router.put('/notes/edit-note/:id', async (req, res) => {
 })
 
 // Eliminar notas
-router.delete('/notes/delete/:id', async (req, res) =>{
+router.delete('/notes/delete/:id',isAuthenticated, async (req, res) =>{
     await Note.findByIdAndDelete(req.params.id)
     req.flash('success_msg', 'Nota eliminada satisfactoriamente')
     res.redirect('/notes')
